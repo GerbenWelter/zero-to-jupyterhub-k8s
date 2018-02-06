@@ -1,17 +1,17 @@
-FROM ubuntu:17.10
+FROM centos:7.4.1708
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      git \
-      python3 \
-      python3-dev \
-      python3-pip \
-      python3-setuptools \
-      libcurl4-openssl-dev \
-      libssl-dev \
-      build-essential \
-      && \
-    apt-get purge && apt-get clean
+# RUN yum -y update && \
+RUN yum -y install centos-release-scl && \
+    yum-config-manager --enable centos-sclo-rh-testing && \
+    yum -y --setopt=tsflags=nodocs groupinstall "Development Tools" && \
+    yum -y install --setopt=tsflags=nodocs \
+      rh-python36 \
+      rh-python36-python-devel \
+      rh-python36-python-pip \
+      rh-python36-python-setuptools \
+      libcurl-devel \
+      openssl-devel && \
+    yum clean all
 
 ARG NB_USER=jovyan
 ARG NB_UID=1000
@@ -19,23 +19,26 @@ ARG HOME=/home/jovyan
 
 ENV LANG C.UTF-8
 
-RUN adduser --disabled-password \
-    --gecos "Default user" \
+RUN adduser \
+    --comment "Default user" \
+    --user-group \
     --uid ${NB_UID} \
-    --home ${HOME} \
-    --force-badname \
     ${NB_USER}
 
-ARG JUPYTERHUB_VERSION=0.8.*
+ARG JUPYTERHUB_VERSION=0.8.1
 
 ADD requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir \
+
+ENV PATH opt/rh/rh-python36/root/usr/bin:/opt/rh/rh-python36/root/bin:$PATH
+
+RUN pip install --no-cache-dir --compile --install-option="--with-nss" pycurl==7.43.0 && \
+    pip install --no-cache-dir \
          jupyterhub==${JUPYTERHUB_VERSION} \
          -r /tmp/requirements.txt
 
 ADD jupyterhub_config.py /srv/jupyterhub_config.py
 
-ADD z2jh.py /usr/local/lib/python3.6/dist-packages/z2jh.py
+ADD z2jh.py /opt/rh/rh-python36/root/usr/lib/python3.6/site-packages/z2jh.py
 ADD cull_idle_servers.py /usr/local/bin/cull_idle_servers.py
 
 WORKDIR /srv/jupyterhub
