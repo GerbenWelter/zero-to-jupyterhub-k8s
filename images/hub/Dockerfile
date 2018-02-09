@@ -10,7 +10,9 @@ RUN yum -y install centos-release-scl && \
       rh-python36-python-pip \
       rh-python36-python-setuptools \
       libcurl-devel \
-      openssl-devel && \
+      openssl-devel \
+      sssd-client \
+      sssd-krb5-common && \
     yum clean all
 
 ARG NB_USER=jovyan
